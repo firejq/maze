@@ -1,0 +1,245 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <stack>
+#include <ctime>
+#include <Windows.h>
+using namespace std;
+
+struct position {
+	int x;
+	int y;
+};
+//typedef pair<int, int> p;
+//定义迷宫maze
+int width, length;
+const int bx = 1, by = 0;
+int ex = 0, ey = 0;
+vector< vector<char> > maze(width, vector<char>(length, '#'));
+//表示移动的向量
+//const int dx[] = {-1, 1, 0, 0}, dy[] = {0, 0, -1, 1};
+const position ds[4] = {(-1, 0), (1, 0), (0, -1), (0, 1)};
+
+position GenerateInitialize()
+{
+    maze.resize(width);
+    for(int i = 0; i < width; i++)
+    {
+        maze[i].resize(length, '#');
+    }
+
+    for (int i = 0; i < width; i++)
+    {
+        for(int j = 0; j < length; j++)
+        {
+            maze[i][j] = '#';
+        }
+
+    }
+
+    //ex = width - 2;
+    //ey = length - 1;
+
+    //挖空预定义的起点
+    //maze[bx][by] = '.';
+    //终点
+    /*srand((unsigned int)time(0));
+    ex = (rand() % (width - 2 - 1 + 1)) + 1;
+    ey = length - 1;*/
+    //maze[ex][ey] = '.';
+
+
+    //随机确定开挖点(tx, ty)
+    /*srand((unsigned int)time(0));
+    int tx = (rand() % (width - 2 - 1 + 1)) + 1,
+    	ty = (rand() % (length - 2 - 1 + 1)) + 1;*/
+
+    //从起点开挖
+
+	position BeginDig = {bx, by};
+    return BeginDig;
+}
+//////////////////////////////////////////////////
+//			判断出了问题,只会返回1					//
+//////////////////////////////////////////////////
+bool IsRoadAround(position cur, position nDig)
+{
+    //判断点maze[x][y]的另外三个方向是不是通路
+    for (int i = 0; i < 4; i++)
+    {
+		int nnx = nDig.x + ds[i].x,
+			nny = nDig.y + ds[i].y;
+
+        if (0 <= nnx && nnx <= width && 0 <= nny && nny <= length)
+        {
+            if (maze[nnx][nny] == '.')
+            {
+                if ((nDig.x == cur.x && nDig.y == cur.y) || (nnx == bx && nny == by) || (nnx == ex && nny == ey))
+                {
+                    continue;
+                }
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+
+void GenerateMaze(position cur)
+{
+    //当前位置点
+    maze[cur.x][cur.y] = '.';
+
+    //if (y == length -1 )
+
+    //从当前点开始DFS
+    srand((unsigned int)time(NULL));
+    //for (int i = ; i < 4; i++) {
+    int i = (rand() % ((3 - 0) + 1)) + 0;
+
+	int nx = cur.x + ds[i].x,
+        ny = cur.y + ds[i].y;
+	position nDig = {nx, ny};
+
+    if (ny == (length -1) && 0 < nx && nx < (width - 1) && ex == 0 && ey == 0)
+    {
+        ex = nx;
+        ey = ny;
+        GenerateMaze(nDig);
+        return;
+    }
+
+    if (0 < nx && nx < (width - 1) && 0 < ny && ny < (length - 1))
+    {
+        if (((nx == bx && ny == by + 1) || (nx == ex && ny == (ey - 1))) && (maze[nx][ny] == '#'))
+        {
+            GenerateMaze(nDig);
+            //return;
+        }
+
+        if(maze[nx][ny] == '#' && !(IsRoadAround(cur, nDig)))
+        {
+            GenerateMaze(nDig);
+        }
+    }
+
+    //}
+    return;
+
+
+}
+
+/*
+//迷宫上个点（x, y）到起点的距离，INF表示无法到达，用INF初始化
+const int INF = 0x3f3f3f3f;
+vector< vector<int> > d(length, vector<int>(width, INF));
+
+
+int DistanceFromBeginToEnd() {
+	//用BFS求起点到终点的最短路程，若为INF，则该迷宫不通
+
+	queue<p> que;
+	//将当前坐标push入队列
+	que.push(p(bx, by));
+	d[0][0] = 0;
+
+	while (que.size()) {
+		p a = que.front();
+		que.pop();
+
+		//如果到达终点则停止
+		if (a.x == ex && a.y == ey) break;
+
+		//遍历四个方向操作
+		for (int i = 0; i < 4; i++) {
+			int nx = a.x + dx[i],
+				ny = a.y + dy[i];
+
+			if (0 <= nx && nx <= width && 0 <= ny && ny <= length && maze[nx][ny] != '#' && d[nx][ny] == INF) {
+				que.push(p(nx, ny));
+				d[nx][ny] = d[a.x][a.y] + 1;
+			}
+		}
+	}
+	//返回最短路径
+	return d[ex][ey];
+
+}
+
+bool IsReachEnd() {
+	//判断是否能到达终点
+	return ((DistanceFromBeginToEnd() == INF) ? 0 : 1);
+}
+
+
+
+void TraversalMaze(int x, int y) {
+	//用DFS的递归实现走迷宫
+
+	//将当前位置替换为(x,y)
+	p cur(x, y);
+	if (maze[cur.x][cur.y] == '.' ) {
+		maze[cur.x][cur.y] = 'x';
+	}
+
+	//遍历四个方向
+	for (int i = 0; i < 4; i++) {
+		//移动后的坐标为（nx, ny）
+		int nx = cur.x + dx[i],
+			ny = cur.y + dy[i];
+
+		if (0 <= nx && nx <= width && 0 <= ny && ny <= length && maze[nx][ny] == '.') {
+			TraversalMaze(nx, ny);
+		}
+	}
+	return;
+}
+*/
+
+void PrintMaze()
+{
+    /*for (int i = 0; i < width; i++) {
+    	for (int j = 0; j < length; j++) {
+    		cout<<maze[i][j];
+    	}
+    	cout<<endl;
+    }*/
+    for (vector< vector<char> >::iterator it = maze.begin(); it != maze.end(); it++)
+    {
+        for (vector<char>::iterator it1 = (*it).begin(); it1 != (*it).end(); it1++)
+        {
+            cout<<(*it1)<<' ';
+        }
+        cout<<endl;
+    }
+}
+
+
+int main()
+{
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_INTENSITY | FOREGROUND_GREEN);
+    cout<<"请输入生成迷宫的长和宽：";
+
+    while(cin>>width>>length)
+    {
+        //随机确认开挖点
+        position BeginDig = GenerateInitialize();
+        GenerateMaze(BeginDig);
+        PrintMaze();
+        cout<<endl;
+    }
+    /*
+    cout<<"是否显示走出迷宫？Y/N";
+
+    char flag;
+    cin>>flag;
+    if (flag == 'y' || flag == 'Y') {
+    	TraversalMaze(bx, by);
+    	PrintMaze();
+    } else {
+    	cout<<"退出！"<<endl;
+    }*/
+
+    return 0;
+}
